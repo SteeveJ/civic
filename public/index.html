@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Civic, dis-le autrement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;1,8..60,400&display=swap" rel="stylesheet">
+<!-- shortcut: Tailwind browser build compiles in the page; switch to the Tailwind CLI if this goes to production. -->
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11"></script>
+<style type="text/tailwindcss">
+  /* full-viewport layout whenever there are two columns; phones keep the stacked scroll */
+  @custom-variant tall (@media (min-width: 48rem));
+  @theme {
+    --color-fievre: #B5473F;
+    --color-neutre: #E3E6EA;
+    --color-calme: #4A78B5;
+    --color-encre: #1A2433;
+    --color-cobalt: #3554D1;
+    --color-brume: #EEF1F4;
+    --color-ardoise: #C9CFD8;
+    --font-sans: "Bricolage Grotesque", system-ui, sans-serif;
+    --font-serif: "Source Serif 4", Georgia, serif;
+    --animate-apparait: apparait .35s ease-out;
+    @keyframes apparait { from { opacity: 0; transform: translateY(6px); } }
+  }
+  /* --chaud is set from the diplomacy slider: red at 0, neutral grey at 50, blue at 100 */
+  .chaud { background: var(--chaud, var(--color-neutre)); }
+  body[data-k=reverse] .chaud { background: color-mix(in oklch, var(--color-calme) 22%, var(--color-neutre)); }
+  body[data-k=reverse] .froid { background: color-mix(in oklch, var(--color-fievre) 22%, var(--color-neutre)); }
+  body[data-k=antidote] .chaud, body[data-k=bullshit_score] .chaud { background: var(--color-ardoise); }
+  .diplo { appearance: none; height: 28px; background: transparent; cursor: pointer; }
+  .diplo::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--color-fievre), var(--color-neutre) 50%, var(--color-calme)); }
+  .diplo::-moz-range-track { height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--color-fievre), var(--color-neutre) 50%, var(--color-calme)); }
+  .diplo::-webkit-slider-thumb { appearance: none; width: 26px; height: 26px; margin-top: -9px; border-radius: 50%; background: white; border: 3px solid var(--color-encre); box-shadow: 0 1px 3px rgb(26 36 51 / .25); }
+  .diplo::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: white; border: 3px solid var(--color-encre); }
+  .diplo:focus-visible { outline: 3px solid var(--color-cobalt); outline-offset: 4px; border-radius: 6px; }
+  @layer components {
+    .pilule { @apply cursor-pointer rounded-full border-2 border-encre px-3 py-1.5 text-[.92rem] font-semibold aria-pressed:bg-encre aria-pressed:text-white; }
+  }
+</style>
+</head>
+<body data-k="transform" class="m-0 bg-brume font-sans text-encre antialiased tall:flex tall:h-dvh tall:flex-col">
+<header class="shrink-0 flex flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-10">
+  <p class="text-[1.6rem] font-extrabold tracking-tighter">Civic</p>
+  <nav id="tabs" aria-label="Outil" class="flex flex-wrap gap-1 rounded-xl bg-white p-1 [&>button]:cursor-pointer [&>button]:rounded-[9px] [&>button]:px-3.5 [&>button]:py-2 [&>button]:font-semibold [&>button[aria-pressed=true]]:bg-encre [&>button[aria-pressed=true]]:text-white">
+    <button data-k="transform" aria-pressed="true">Adoucir</button>
+    <button data-k="reverse" aria-pressed="false">Décoder</button>
+    <button data-k="antidote" aria-pressed="false">Dé-jargonner</button>
+    <button data-k="bullshit_score" aria-pressed="false">Jargonomètre</button>
+  </nav>
+</header>
+
+<main class="grid min-h-[calc(100dvh-84px)] grid-cols-1 md:grid-cols-2 tall:min-h-0 tall:flex-1">
+  <section aria-labelledby="t-in" class="chaud flex flex-col gap-5 p-5 transition-colors duration-200 motion-reduce:transition-none sm:p-12 tall:gap-4 tall:overflow-y-auto tall:py-6">
+    <h2 id="t-in" class="max-w-[12ch] text-[clamp(2rem,4.5vw,3.4rem)] leading-none font-extrabold tracking-tighter"></h2>
+    <p id="aide" class="-mt-2 max-w-[42ch] opacity-80"></p>
+
+    <div data-for="transform" class="flex flex-col gap-3.5">
+      <div id="mode" role="group" aria-label="Action" class="flex flex-wrap gap-1.5">
+        <button class="pilule" data-v="reformulate" aria-pressed="true">C'est moi qui écris</button>
+        <button class="pilule" data-v="reply" aria-pressed="false">Je réponds à un message</button>
+      </div>
+      <div id="tone" role="group" aria-label="Ton" class="flex flex-wrap gap-1.5">
+        <button class="pilule" data-v="diplomatic" aria-pressed="false">Diplomate</button>
+        <button class="pilule" data-v="professional" aria-pressed="true">Pro</button>
+        <button class="pilule" data-v="assertive" aria-pressed="false">Ferme</button>
+        <button class="pilule" data-v="humor" aria-pressed="false">Second degré</button>
+        <button class="pilule" data-v="passive_aggressive" aria-pressed="false">Poliment piquant</button>
+      </div>
+      <div class="mt-1">
+        <div class="mb-2 flex items-baseline justify-between">
+          <label for="dip" class="font-semibold">Diplomatie</label>
+          <output id="dipv" for="dip" class="text-sm tabular-nums opacity-70"></output>
+        </div>
+        <input type="range" id="dip" min="0" max="100" step="5" value="50" class="diplo w-full">
+        <div id="paliers" class="mt-2 flex justify-between text-[.8rem] [&>button]:cursor-pointer [&>button]:opacity-60 [&>button[aria-current=true]]:font-bold [&>button[aria-current=true]]:opacity-100 [&>button:first-child]:text-left [&>button:last-child]:text-right"></div>
+      </div>
+    </div>
+
+    <div data-for="reverse" hidden class="flex flex-col gap-3.5">
+      <div id="intensity" role="group" aria-label="Intensité" class="flex flex-wrap gap-1.5">
+        <button class="pilule" data-v="franc" aria-pressed="false">Franc</button>
+        <button class="pilule" data-v="suffit" aria-pressed="true">Sans filtre</button>
+        <button class="pilule" data-v="nuclear" aria-pressed="false">Terre brûlée</button>
+      </div>
+    </div>
+
+    <div class="flex flex-1 flex-col border-t-2 border-encre pt-4">
+      <textarea id="text" maxlength="4000" aria-labelledby="t-in"
+        class="min-h-[220px] tall:min-h-[72px] w-full flex-1 resize-none border-0 bg-transparent p-0 text-[clamp(1.25rem,2.2vw,1.6rem)] leading-snug font-semibold tracking-tight outline-none placeholder:text-encre/45"></textarea>
+      <span class="self-end text-sm opacity-70"><span id="n">0</span> / 4000</span>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <select id="lang" aria-label="Langue du résultat" class="rounded-lg border-2 border-encre bg-transparent px-2 py-1.5 font-semibold">
+        <option value="fr">En français</option><option value="en">In English</option>
+      </select>
+      <button id="go" class="cursor-pointer rounded-xl bg-encre px-7 py-3.5 text-[1.05rem] font-extrabold text-white disabled:cursor-progress disabled:opacity-60"></button>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-out" class="froid flex flex-col gap-5 bg-white p-5 sm:p-12 tall:gap-4 tall:overflow-y-auto tall:py-6">
+    <h2 id="t-out" class="max-w-[12ch] text-[clamp(2rem,4.5vw,3.4rem)] leading-none font-extrabold tracking-tighter"></h2>
+    <div id="out" aria-live="polite" class="max-w-[60ch] flex-1 font-serif text-[1.15rem] leading-relaxed whitespace-pre-wrap"></div>
+    <div class="flex items-center justify-between gap-3 border-t border-encre/20 pt-3.5 text-sm">
+      <span id="quota"></span>
+      <button id="copy" hidden class="cursor-pointer rounded-lg border-2 border-encre px-3.5 py-1.5 font-semibold">Copier</button>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const UI = {
+  transform: {
+    reformulate: { in: "Ce que tu penses", out: "Ce que tu envoies", go: "Adoucir", ph: "Ça fait trois fois que je te demande ce fichier.", aide: "Écris sans filtre. Le fond reste, la forme devient présentable." },
+    reply: { in: "Ce que tu as reçu", out: "Ce que tu réponds", go: "Rédiger la réponse", ph: "Colle le message qui t'a agacé.", aide: "Colle le message reçu : tu obtiens une réponse que tu peux envoyer." },
+  },
+  reverse: { in: "Ce qu'on t'a écrit", out: "Ce qu'on pensait vraiment", go: "Décoder", ph: "Je me permets de revenir vers toi concernant mon précédent mail.", aide: "Colle un message trop poli pour être honnête." },
+  antidote: { in: "Le jargon", out: "En clair", go: "Traduire", ph: "Il faut qu'on s'aligne pour embarquer les parties prenantes sur la roadmap.", aide: "Colle un mail corporate : il revient en français normal." },
+  bullshit_score: { in: "Le message", out: "Le verdict", go: "Mesurer", ph: "Colle n'importe quel message corporate.", aide: "Combien de mots creux dans ce message ?" },
+};
+const PALIERS = [[0, "Cash"], [25, "Direct"], [50, "Pro"], [75, "Diplomate"], [100, "Langue de bois"]];
+const EMPTY = { transform: "Ta version présentable s'affichera ici.", reverse: "Le sous-texte s'affichera ici.", antidote: "La traduction s'affichera ici.", bullshit_score: "La note s'affichera ici." };
+const OUT = 'max-w-[60ch] flex-1 font-serif text-[1.15rem] leading-relaxed whitespace-pre-wrap';
+let kind = 'transform';
+
+function el(tag, text, cls) { const e = document.createElement(tag); if (text != null) e.textContent = text; if (cls) e.className = cls; return e; }
+const pick = g => $(g).querySelector('[aria-pressed=true]')?.dataset.v;
+function wire(g, fn) {
+  $(g).addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    $(g).querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    fn?.(b);
+  });
+}
+function setOut(state, text) {
+  const extra = { vide: 'italic opacity-50', charge: 'opacity-50', ok: 'animate-apparait motion-reduce:animate-none',
+    err: 'font-sans font-semibold animate-apparait motion-reduce:animate-none ' + (kind === 'reverse' ? 'text-encre' : 'text-[#B3261E]') }[state];
+  const o = $('out'); o.className = `${OUT} ${extra}`; o.textContent = text ?? ''; return o;
+}
+function labels() {
+  const u = kind === 'transform' ? UI.transform[pick('mode')] : UI[kind];
+  $('t-in').textContent = u.in; $('t-out').textContent = u.out;
+  $('go').textContent = u.go; $('text').placeholder = u.ph; $('aide').textContent = u.aide;
+}
+function setKind(k) {
+  kind = k; document.body.dataset.k = k;
+  document.querySelectorAll('[data-for]').forEach(s => s.hidden = s.dataset.for !== k);
+  labels(); setOut('vide', EMPTY[k]); $('copy').hidden = true;
+}
+function setDip() {
+  const v = +$('dip').value;
+  // Only a light tint (max 22%) so the panel stays easy on the eyes.
+  const [c, t] = v < 50 ? ['fievre', 50 - v] : ['calme', v - 50];
+  document.documentElement.style.setProperty('--chaud', `color-mix(in oklch, var(--color-${c}) ${t * 0.44}%, var(--color-neutre))`);
+  $('dipv').textContent = `${v} / 100`;
+  const cur = PALIERS.reduce((a, p, i) => v >= p[0] - 12 ? i : a, 0);
+  [...$('paliers').children].forEach((b, i) => b.setAttribute('aria-current', i === cur));
+}
+wire('tabs', b => setKind(b.dataset.k));
+wire('mode', labels); wire('tone'); wire('intensity');
+PALIERS.forEach(([at, name]) => {
+  const b = el('button', name); b.type = 'button';
+  b.onclick = () => { $('dip').value = at; setDip(); };
+  $('paliers').append(b);
+});
+$('dip').oninput = setDip;
+$('text').oninput = () => $('n').textContent = $('text').value.length;
+setDip(); setKind('transform');
+
+async function refreshQuota() {
+  try { const q = await (await fetch('/api/quota')).json(); $('quota').textContent = `${q.remaining} essais restants aujourd'hui`; } catch {}
+}
+refreshQuota();
+
+function render(data) {
+  const o = setOut('ok');
+  if (data.output_text) { o.textContent = data.output_text; $('copy').hidden = false; return; }
+  const r = data.result || {};
+  if (kind === 'antidote') {
+    o.append(el('p', r.translation || ''));
+    if (r.terms?.length) {
+      const dl = el('dl', null, 'mt-6');
+      r.terms.forEach(t => dl.append(el('dt', t.jargon, 'mt-3.5 font-sans font-extrabold'), el('dd', t.meaning, 'mt-0.5')));
+      o.append(dl);
+    }
+    $('copy').hidden = false;
+  } else {
+    const s = Math.max(0, Math.min(100, Number(r.score) || 0));
+    const note = el('p', String(s), 'font-sans text-[clamp(5rem,14vw,9rem)] leading-[.9] font-extrabold tracking-tighter');
+    note.append(el('small', ' / 100', 'text-[.3em] tracking-normal'));
+    const jauge = el('div', null, 'my-4 h-3.5 overflow-hidden rounded-full bg-brume');
+    const bar = el('i', null, 'block h-full bg-gradient-to-r from-calme/60 to-fievre/80'); bar.style.width = s + '%'; jauge.append(bar);
+    jauge.setAttribute('role', 'img'); jauge.setAttribute('aria-label', `Jargon : ${s} sur 100`);
+    o.append(note, jauge, el('p', r.verdict || ''));
+    if (r.buzzwords?.length) {
+      const m = el('div', null, 'mt-3 flex flex-wrap gap-1.5 font-sans');
+      r.buzzwords.forEach(w => m.append(el('span', w, 'rounded-md bg-brume px-2.5 py-1 line-through')));
+      o.append(m);
+    }
+  }
+}
+
+$('go').onclick = async () => {
+  const text = $('text').value.trim();
+  if (!text) { $('text').focus(); return setOut('err', "Écris ou colle un texte à gauche d'abord."); }
+  const body = { text, language: $('lang').value };
+  if (kind === 'transform') Object.assign(body, { mode: pick('mode'), tone: pick('tone'), diplomacy: +$('dip').value });
+  if (kind === 'reverse') body.intensity = pick('intensity');
+  $('go').disabled = true; setOut('charge', 'Rédaction en cours…'); $('copy').hidden = true;
+  try {
+    const r = await fetch('/api/' + kind, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const data = await r.json();
+    r.ok ? render(data) : setOut('err', data.detail || 'La demande a échoué. Réessaie.');
+  } catch { setOut('err', "Le serveur ne répond pas. Vérifie qu'il est lancé avec npm start."); }
+  finally { $('go').disabled = false; refreshQuota(); }
+};
+$('copy').onclick = async () => {
+  await navigator.clipboard.writeText($('out').innerText);
+  $('copy').textContent = 'Copié'; setTimeout(() => $('copy').textContent = 'Copier', 1500);
+};
+</script>
+</body>
+</html>
