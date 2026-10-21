@@ -1,6 +1,7 @@
 {
   "name": "civic",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "engines": { "node": ">=20.12" },
   "scripts": {

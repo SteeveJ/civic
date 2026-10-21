@@ -99,3 +99,7 @@ npm test
 ## Limites
 
 Le quota est gardé en mémoire : il repart de zéro au redémarrage et ne se partage pas entre plusieurs instances. Pour en faire tourner plusieurs, il faudra le stocker dans Redis.
+
+## Licence
+
+MIT, voir [LICENSE](LICENSE). Le code de watermarks-remover dans `src/adapters/scrubber/vendor/watermarks/` garde sa propre licence MIT.
